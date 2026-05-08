@@ -1,136 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FaceRun - 얼굴로 조종하는 게임</title>
-
-    <!-- Google Fonts: 디자인 전공자 감성의 폰트 조합 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- p5.js: 캔버스 드로잉 및 게임 루프 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-
-    <!-- ml5.js: FaceMesh 얼굴 인식 (p5.js 이후 로드) -->
-    <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
-
-    <!-- 외부 스타일시트 -->
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <!--
-    ┌─────────────────────────────────────────┐
-    │  UI 레이어: p5.js 캔버스 위에 오버레이로 표시  │
-    └─────────────────────────────────────────┘
-    position: fixed / absolute 로 캔버스 위에 띄움
-  -->
-
-    <!-- ① HOME 화면 -->
-    <div id="screen-home" class="screen active">
-      <div class="card">
-        <div class="logo-mark">FR</div>
-        <h1 class="game-title">FACE<span class="accent">RUN</span></h1>
-        <p class="subtitle">얼굴을 움직여 장애물을 피하세요</p>
-        <div class="btn-group">
-          <button id="btn-start" class="btn btn-primary">게임 시작</button>
-          <button id="btn-ranking" class="btn btn-outline">랭킹 보기</button>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle Face Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+</head>
+<body>
+    <div id="ui-layer">
+        <!-- 홈 화면 -->
+        <div id="home-screen" class="screen">
+            <h1>DOODLE DASH</h1>
+            <input type="text" id="nickname" placeholder="NICKNAME" maxlength="10">
+            <button onclick="startGame()">START GAME</button>
+            <button onclick="showRanking()">RANKING</button>
         </div>
-        <p class="hint-text">* 웹캠 접근 권한이 필요합니다</p>
-      </div>
+
+        <!-- 랭킹 화면 -->
+        <div id="ranking-screen" class="screen" style="display:none;">
+            <h1>TOP 10</h1>
+            <div id="ranking-list"></div>
+            <button onclick="showHome()">HOME</button>
+        </div>
+
+        <!-- 게임 오버 화면 -->
+        <div id="gameover-screen" class="screen" style="display:none;">
+            <h1>GAME OVER</h1>
+            <p id="final-score"></p>
+            <p id="my-rank"></p>
+            <button onclick="showHome()">HOME</button>
+        </div>
     </div>
-
-    <!-- ② START 화면 (닉네임 입력 + 카운트다운) -->
-    <div id="screen-start" class="screen">
-      <div class="card card--start">
-        <!-- 닉네임 입력 단계 -->
-        <div id="phase-nickname">
-          <h2 class="section-title">닉네임 입력</h2>
-          <p class="subtitle">랭킹에 표시될 이름을 입력하세요</p>
-          <input
-            id="nickname-input"
-            class="text-input"
-            type="text"
-            placeholder="닉네임 (최대 10자)"
-            maxlength="10"
-          />
-          <button id="btn-confirm-nick" class="btn btn-primary">확인</button>
-          <button id="btn-back-home" class="btn btn-ghost">뒤로</button>
-        </div>
-
-        <!-- 카운트다운 단계 -->
-        <div id="phase-countdown" class="hidden">
-          <p class="countdown-label">준비하세요!</p>
-          <div id="countdown-number" class="countdown-num">3</div>
-          <p class="subtitle">화면 정중앙에 얼굴을 위치시키세요</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ③ PLAYING 화면 (HUD: 타이머만 표시, 나머지는 캔버스에 그림) -->
-    <div id="screen-playing" class="screen">
-      <div id="hud">
-        <div class="hud-item">
-          <span class="hud-label">TIME</span>
-          <span id="hud-timer" class="hud-value">00:00.0</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">PLAYER</span>
-          <span id="hud-nickname" class="hud-value">---</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ④ GAME OVER 화면 -->
-    <div id="screen-gameover" class="screen">
-      <div class="card">
-        <div class="gameover-badge">GAME OVER</div>
-        <h2 class="section-title">기록</h2>
-        <div class="result-block">
-          <div class="result-row">
-            <span class="result-label">플레이어</span>
-            <span id="result-nickname" class="result-value">---</span>
-          </div>
-          <div class="result-row">
-            <span class="result-label">생존 시간</span>
-            <span id="result-time" class="result-value accent">00:00.0</span>
-          </div>
-          <div class="result-row">
-            <span class="result-label">랭킹 순위</span>
-            <span id="result-rank" class="result-value"># ---</span>
-          </div>
-        </div>
-        <div class="btn-group">
-          <button id="btn-retry" class="btn btn-primary">다시 하기</button>
-          <button id="btn-home-from-gameover" class="btn btn-outline">
-            홈으로
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ⑤ RANKING 화면 -->
-    <div id="screen-ranking" class="screen">
-      <div class="card card--ranking">
-        <h2 class="section-title">RANKING</h2>
-        <div id="ranking-list" class="ranking-list">
-          <!-- sketch.js에서 동적으로 생성 -->
-        </div>
-        <button
-          id="btn-home-from-ranking"
-          class="btn btn-outline"
-          style="margin-top: 2rem"
-        >
-          홈으로
-        </button>
-      </div>
-    </div>
-
-    <!-- p5.js 스케치 (모든 게임 로직) -->
     <script src="sketch.js"></script>
-  </body>
+</body>
 </html>
