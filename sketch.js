@@ -3,7 +3,7 @@ let faceMesh;
 let faces = [];
 let gameState = "HOME";
 let pipes = [];
-let balls = []; // 추가: 왼쪽에서 오는 공 배열
+let balls = [];
 let score = 0;
 let countdown = 3;
 let userNickname = "";
@@ -27,8 +27,9 @@ function setup() {
   video.hide();
   faceMesh.detectStart(video, gotFaces);
 }
-
+//
 function gotFaces(results) {
+  // 감지된 얼굴 데이터 저장
   faces = results;
 }
 
@@ -46,7 +47,7 @@ function draw() {
 
   drawCharacter();
 }
-
+// 캐릭터 그리기
 function drawCharacter() {
   if (faces.length > 0) {
     let face = faces[0];
@@ -61,7 +62,7 @@ function drawCharacter() {
     playerY = y;
   }
 }
-
+// 게임 플레이 로직
 function runGame() {
   let elapsed = millis() - gameStartTime;
   let passedSeconds = floor(elapsed / 1000);
@@ -70,7 +71,6 @@ function runGame() {
   currentSpeed = 6 + passedSeconds * 0.023;
   spawnInterval = max(40, 80 - passedSeconds * 0.1);
 
-  // --- 기존 파이프 로직 ---
   if (frameCount % floor(spawnInterval) === 0) {
     pipes.push(new Pipe(currentSpeed));
   }
@@ -81,9 +81,7 @@ function runGame() {
     if (pipes[i].offscreen()) pipes.splice(i, 1);
   }
 
-  // --- 추가: 3분(180초) 이후 공 장애물 생성 ---
   if (passedSeconds >= 1) {
-    // 약 1.5초마다 하나씩 생성 (90프레임)
     if (frameCount % 90 === 0) {
       balls.push(new Ball(currentSpeed));
     }
@@ -108,8 +106,8 @@ function runGame() {
   }
 }
 
-// 나머지 Pipe 클래스 및 UI 함수는 이전과 동일 (startGame 시 balls = [] 초기화만 추가)
 class Pipe {
+  // 오른쪽에서 날아오는 파이프 클래스
   constructor(speed) {
     this.spacing = 180;
     this.top = random(100, height - this.spacing - 100);
@@ -139,6 +137,7 @@ class Pipe {
 }
 
 function startGame() {
+  // 닉네임 입력받고 게임 시작
   userNickname = document.getElementById("nickname").value || "ANON";
   document.getElementById("home-screen").style.display = "none";
   gameState = "COUNT";
@@ -149,20 +148,20 @@ function startGame() {
       gameState = "PLAY";
       score = 0;
       pipes = [];
-      balls = []; // 게임 시작 시 공 배열 초기화
+      balls = [];
       countdown = 3;
       gameStartTime = millis();
     }
   }, 1000);
 }
-
+// 게임 오버 화면에서 재시작
 function drawCountdown() {
   fill(0);
   textSize(64);
   textAlign(CENTER, CENTER);
   text(countdown, width / 2, height / 2);
 }
-
+// 게임 종료 처리
 function endGame() {
   gameState = "GAMEOVER";
   saveScore(userNickname, score);
@@ -170,14 +169,14 @@ function endGame() {
   document.getElementById("final-score").innerText = `SURVIVED: ${score}s`;
   showMyRank(score);
 }
-
+// 점수 저장하기
 function saveScore(name, score) {
   let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
   ranking.push({ name, score });
   ranking.sort((a, b) => b.score - a.score);
   localStorage.setItem("doodle_rank", JSON.stringify(ranking.slice(0, 10)));
 }
-
+// 랭킹 화면 보여주기
 function showRanking() {
   document.getElementById("home-screen").style.display = "none";
   document.getElementById("ranking-screen").style.display = "block";
@@ -187,13 +186,13 @@ function showRanking() {
     .join("");
   document.getElementById("ranking-list").innerHTML = listHTML || "NO DATA";
 }
-
+// 내 랭킹 보여주기
 function showMyRank(score) {
   let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
   let rank = ranking.findIndex((i) => i.score === score) + 1;
   document.getElementById("my-rank").innerText = `YOUR RANK: ${rank}`;
 }
-
+// 홈 화면으로 돌아가기
 function showHome() {
   gameState = "HOME";
   document
