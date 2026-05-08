@@ -46,27 +46,20 @@ function draw() {
 }
 
 function drawCharacter() {
-  // 1. 얼굴 데이터가 있는지 먼저 확인
   if (faces.length > 0) {
     let face = faces[0];
-    let nose = face.keypoints[1]; // 코 끝 지점
+    // 코 끝(index 1) 위치를 기준으로 캐릭터 배치
+    let nose = face.keypoints[1];
+    let x = map(nose.x, 0, 640, 0, width);
+    let y = map(nose.y, 0, 480, 0, height);
 
-    // [중요 수정] 640, 480 대신 실제 비디오의 가로/세로 크기를 사용합니다.
-    // 이렇게 하면 어떤 노트북 웹캠에서도 공이 화면 좌표에 정확히 매핑됩니다.
-    let x = map(nose.x, 0, video.width, 0, width);
-    let y = map(nose.y, 0, video.height, 0, height);
-
-    // 2. 혹시 모를 오차를 방지하기 위해 화면 안으로 좌표를 강제 제한(constrain)
-    x = constrain(x, 0, width);
-    y = constrain(y, 0, height);
-
-    // Doodle 스타일 캐릭터 그리기
+    // Doodle 스타일 캐릭터 (원)
     stroke(0);
     strokeWeight(3);
     fill(255);
     ellipse(x, y, 40, 40);
 
-    // 전역 변수에 현재 위치 저장 (장애물 충돌 판정용)
+    // 충돌 체크용 좌표 저장
     playerX = x;
     playerY = y;
   }
