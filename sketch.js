@@ -46,41 +46,27 @@ function draw() {
 }
 
 function drawCharacter() {
-  // 얼굴 데이터가 있을 때만 실행
+  // 1. 얼굴 데이터가 있는지 먼저 확인
   if (faces.length > 0) {
     let face = faces[0];
-    // 코 끝(keypoint index 1)을 기준으로 삼습니다. ml5.js 버전에 따라 1 또는 다른 숫자일 수 있습니다.
-    // 만약 여전히 이상하다면 face.keypoints.length를 출력해서 확인해봐야 합니다.
-    if (!face.keypoints || face.keypoints.length < 2) return;
+    let nose = face.keypoints[1]; // 코 끝 지점
 
-    let nose = face.keypoints[1];
-
-    // --- [가장 중요한 수정 부분] ---
-
-    // 배경 비디오를 캔버스에 좌우 반전(Mirror)해서 그렸으므로,
-    // 공의 x좌표도 반대로 매핑해줘야 웹캠 영상 속 코 위치와 공이 일치하게 됩니다.
-
-    // 기존: 0 -> video.width를 0 -> width로 매핑
-    // 수정: 0 -> video.width를 width -> 0으로 매핑 (순서를 바꿈)
-    let x = map(nose.x, 0, video.width, width, 0); // x좌표 반전 매핑
-
-    // y좌표는 그대로 0 -> video.height를 0 -> height로 매핑
+    // [중요 수정] 640, 480 대신 실제 비디오의 가로/세로 크기를 사용합니다.
+    // 이렇게 하면 어떤 노트북 웹캠에서도 공이 화면 좌표에 정확히 매핑됩니다.
+    let x = map(nose.x, 0, video.width, 0, width);
     let y = map(nose.y, 0, video.height, 0, height);
 
-    // ------------------------------
-
-    // 혹시 모를 오차를 방지하기 위해 화면 안으로 좌표를 강제 제한(constrain)
+    // 2. 혹시 모를 오차를 방지하기 위해 화면 안으로 좌표를 강제 제한(constrain)
     x = constrain(x, 0, width);
     y = constrain(y, 0, height);
 
-    // Doodle 스타일 캐릭터 그리기 (검은 선, 흰 채우기 원)
+    // Doodle 스타일 캐릭터 그리기
     stroke(0);
     strokeWeight(3);
     fill(255);
     ellipse(x, y, 40, 40);
 
     // 전역 변수에 현재 위치 저장 (장애물 충돌 판정용)
-    // 만약 playerX, playerY 변수 선언이 안 되어 있다면 맨 위에 let playerX, playerY; 를 추가하세요.
     playerX = x;
     playerY = y;
   }
