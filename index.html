@@ -1,41 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Doodle Face Game</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="ui-layer">
-        <!-- 홈 화면 -->
-        <div id="home-screen" class="screen">
-            <h1>DOODLE DASH</h1>
-            <input type="text" id="nickname" placeholder="NICKNAME" maxlength="10">
-            <button onclick="startGame()">START GAME</button>
-            <button onclick="showRanking()">RANKING</button>
+      <!-- 홈 화면 -->
+      <div id="home-screen" class="screen">
+        <h1>DOODLE DASH</h1>
+        <input
+          type="text"
+          id="nickname"
+          placeholder="NICKNAME"
+          maxlength="10"
+        />
+        <div id="face-preview-frame">
+          <canvas id="face-preview" width="180" height="180"></canvas>
+          <p id="face-preview-label">NO FACE SCANNED</p>
         </div>
+        <button onclick="scanFace()">SCAN FACE</button>
+        <button onclick="startGame()">START GAME</button>
+        <button onclick="showRanking()">RANKING</button>
+      </div>
 
-        <!-- 랭킹 화면 -->
-        <div id="ranking-screen" class="screen" style="display:none;">
-            <h1>TOP 10</h1>
-            <div id="ranking-list"></div>
-            <button onclick="showHome()">HOME</button>
-        </div>
+      <!-- 랭킹 화면 -->
+      <div id="ranking-screen" class="screen" style="display: none">
+        <h1>TOP 10</h1>
+        <div id="ranking-list"></div>
+        <button onclick="showHome()">HOME</button>
+      </div>
 
-        <!-- 게임 오버 화면 -->
-        <div id="gameover-screen" class="screen" style="display:none;">
-            <h1>GAME OVER</h1>
-            <p id="final-score"></p>
-            <p id="my-rank"></p>
-            <button onclick="showHome()">HOME</button>
-        </div>
+      <!-- 게임 오버 화면 -->
+      <div id="gameover-screen" class="screen" style="display: none">
+        <h1>GAME OVER</h1>
+        <p id="final-score"></p>
+        <p id="my-rank"></p>
+        <button onclick="showHome()">HOME</button>
+      </div>
     </div>
-    
-  
+
     <script src="sketch02.js"></script>
     <script src="sketch.js"></script>
-</body>
+  </body>
 </html>
