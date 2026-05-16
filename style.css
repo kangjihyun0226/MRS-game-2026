@@ -4,6 +4,7 @@
   box-sizing: border-box;
   overflow: hidden;
 }
+
 body {
   background: #fff;
   font-family: monospace;
@@ -31,13 +32,32 @@ canvas {
   border: 2px solid #000;
   padding: 40px;
   text-align: center;
-  min-width: 300px;
+  min-width: 350px; /* 화면이 답답해 보이지 않도록 최소 너비를 살짝 늘렸습니다 */
 }
 
 h1 {
   font-size: 24px;
   margin-bottom: 20px;
   letter-spacing: 2px;
+}
+
+/* 💡 [추가/변경] 게임오버 및 결과 화면의 텍스트 행간 스타일 정의 */
+#gameover-screen {
+  line-height: 1.8; /* 전체적인 줄 간격을 넉넉하고 시원하게 설정 */
+}
+
+#final-score {
+  line-height: 2.2 !important; /* 축하 문구와 기록 사이의 행간을 2.2배로 넓게 설정 (!important로 JS 스타일 덮어쓰기 방지) */
+  margin-top: 10px;
+  margin-bottom: 15px;
+  white-space: pre-line; /* \n 코드 기반 줄바꿈이 정상 작동하도록 보장 */
+}
+
+#my-rank {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
 input {
@@ -84,13 +104,15 @@ input {
 button {
   display: block;
   width: 100%;
-  padding: 10px;
+  padding: 12px; /* 버튼도 덜 답답해 보이도록 패딩을 살짝 늘렸습니다 */
   background: #000;
   color: #fff;
   border: none;
   cursor: pointer;
   margin-bottom: 5px;
   font-family: monospace;
+  font-size: 15px;
+  font-weight: bold;
 }
 
 button:hover {
@@ -101,4 +123,5 @@ button:hover {
   margin: 20px 0;
   text-align: left;
   font-size: 14px;
+  line-height: 1.8; /* 랭킹 리스트 목록도 가독성이 좋게 행간 추가 */
 }

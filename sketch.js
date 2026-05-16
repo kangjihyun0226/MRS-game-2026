@@ -4,11 +4,15 @@ let faces = [];
 let gameState = "HOME";
 let pipes = [];
 let balls = [];
-let score = 0;
+let score = 0.0;
 let countdown = 3;
 let userNickname = "";
 let playerAvatar = null;
 let playerFrameImages = [];
+
+// 하트(목숨) 및 기회 저장 제어 변수
+let lives = 3;
+let attemptScores = [];
 
 const FACE_OVAL_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
@@ -35,9 +39,13 @@ let currentSpeed = 6;
 let spawnInterval = 80;
 let playerX, playerY;
 
-const PLAYER_HITBOX_RADIUS = 20;
-const PLAYER_VISUAL_SIZE = 52;
+// 설정된 플레이어 스케일 유지
+const PLAYER_HITBOX_RADIUS = 42;
+const PLAYER_VISUAL_SIZE = 100;
 const PREVIEW_HOLE_SIZE_RATIO = 0.62;
+
+let lastPipeTop = -1;
+let lastPipeSpacing = -1;
 
 const options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: true };
 
@@ -55,9 +63,8 @@ function setup() {
   faceMesh.detectStart(video, gotFaces);
   updateFacePreview();
 }
-//
+
 function gotFaces(results) {
-  // 감지된 얼굴 데이터 저장
   faces = results;
 }
 
@@ -182,10 +189,8 @@ function drawAvatarCircle(x, y, size) {
 
 function getCurrentPlayerFrame() {
   if (playerFrameImages.length === 0) return null;
-
   let frameIndex =
     floor(millis() / PLAYER_FRAME_ANIMATION_MS) % PLAYER_FRAME_ASSETS.length;
-
   return {
     image: playerFrameImages[frameIndex],
     meta: PLAYER_FRAME_ASSETS[frameIndex],
@@ -194,12 +199,10 @@ function getCurrentPlayerFrame() {
 
 function drawPlayerFrame(x, y, holeSize) {
   let frame = getCurrentPlayerFrame();
-
   if (!frame) return;
 
   let frameImage = frame.image;
   let frameMeta = frame.meta;
-
   if (!frameImage) return;
 
   let frameScale = holeSize / (frameMeta.circle.r * 2);
@@ -216,11 +219,9 @@ function drawAvatarToCanvas(targetCanvas) {
 
   let context = targetCanvas.getContext("2d");
   context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-
   if (!playerAvatar) return;
 
   let frame = getCurrentPlayerFrame();
-
   if (!frame || !frame.image) return;
 
   let source = playerAvatar.canvas || playerAvatar.elt;
@@ -262,14 +263,12 @@ function updateFacePreview() {
 
 function scanFace() {
   let nextAvatar = capturePlayerAvatar();
-
   if (!nextAvatar) {
     window.alert(
       "얼굴이 아직 감지되지 않았습니다. 카메라 정면을 보고 다시 스캔해주세요.",
     );
     return;
   }
-
   playerAvatar = nextAvatar;
   updateFacePreview();
 }
@@ -294,7 +293,7 @@ function draw() {
   drawCharacter();
   updateFacePreview();
 }
-// 캐릭터 그리기
+
 function drawCharacter() {
   if (faces.length > 0) {
     let face = faces[0];
@@ -317,158 +316,12 @@ function drawCharacter() {
     playerY = y;
   }
 }
-// 게임 플레이 로직
-function runGame() {
-  let elapsed = millis() - gameStartTime;
-  let passedSeconds = floor(elapsed / 1000);
-  score = passedSeconds;
 
-  currentSpeed = 6 + passedSeconds * 0.023;
-  spawnInterval = max(40, 80 - passedSeconds * 0.1);
-
-  if (frameCount % floor(spawnInterval) === 0) {
-    pipes.push(new Pipe(currentSpeed));
+function clearRanking() {
+  if (confirm("진짜로 모든 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️")) {
+    localStorage.removeItem("doodle_rank"); // 로컬스토리지 데이터 삭제
+    showRanking(); // 지워진 상태(NO DATA)로 랭킹 화면 실시간 새로고침
   }
-  for (let i = pipes.length - 1; i >= 0; i--) {
-    pipes[i].update();
-    pipes[i].show();
-    if (pipes[i].hits(playerX, playerY)) endGame();
-    if (pipes[i].offscreen()) pipes.splice(i, 1);
-  }
-
-  if (passedSeconds >= 1) {
-    if (frameCount % 90 === 0) {
-      balls.push(new Ball(currentSpeed));
-    }
-  }
-
-  // 공 업데이트 및 충돌 체크
-  for (let i = balls.length - 1; i >= 0; i--) {
-    balls[i].update();
-    balls[i].show();
-    if (balls[i].hits(playerX, playerY)) endGame();
-    if (balls[i].offscreen()) balls.splice(i, 1);
-  }
-
-  fill(0);
-  noStroke();
-  textSize(25);
-  textAlign(LEFT);
-  text(`TIME: ${score}s`, 30, 40);
-  if (passedSeconds >= 180) {
-    fill(255, 0, 0);
-    text(`WARNING: FAST BALLS!`, 30, 70);
-  }
-}
-
-class Pipe {
-  // 오른쪽에서 날아오는 파이프 클래스
-  constructor(speed) {
-    this.spacing = 180;
-    this.top = random(100, height - this.spacing - 100);
-    this.x = width;
-    this.w = 50;
-    this.speed = speed;
-  }
-  show() {
-    stroke(0);
-    strokeWeight(3);
-    fill(255);
-    rect(this.x, 0, this.w, this.top);
-    rect(this.x, this.top + this.spacing, this.w, height);
-  }
-  update() {
-    this.x -= this.speed;
-  }
-  offscreen() {
-    return this.x < -this.w;
-  }
-  hits(px, py) {
-    if (
-      px + PLAYER_HITBOX_RADIUS > this.x &&
-      px - PLAYER_HITBOX_RADIUS < this.x + this.w
-    ) {
-      if (
-        py - PLAYER_HITBOX_RADIUS < this.top ||
-        py + PLAYER_HITBOX_RADIUS > this.top + this.spacing
-      ) {
-        return true;
-      }
-    }
-    return false;
-  }
-}
-
-function startGame() {
-  // 닉네임 입력받고 게임 시작
-  userNickname = document.getElementById("nickname").value || "ANON";
-  if (!playerAvatar) {
-    window.alert("먼저 SCAN FACE 버튼으로 얼굴을 스캔해주세요.");
-    return;
-  }
-
-  document.getElementById("home-screen").style.display = "none";
-  document.getElementById("gameover-screen").style.display = "none";
-  gameState = "COUNT";
-  let timer = setInterval(() => {
-    countdown--;
-    if (countdown <= 0) {
-      clearInterval(timer);
-      gameState = "PLAY";
-      score = 0;
-      pipes = [];
-      balls = [];
-      countdown = 3;
-      gameStartTime = millis();
-    }
-  }, 1000);
-}
-// 게임 오버 화면에서 재시작
-function drawCountdown() {
-  fill(0);
-  textSize(64);
-  textAlign(CENTER, CENTER);
-  text(countdown, width / 2, height / 2);
-}
-// 게임 종료 처리
-function endGame() {
-  gameState = "GAMEOVER";
-  saveScore(userNickname, score);
-  document.getElementById("gameover-screen").style.display = "block";
-  document.getElementById("final-score").innerText = `SURVIVED: ${score}s`;
-  showMyRank(score);
-}
-// 점수 저장하기
-function saveScore(name, score) {
-  let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
-  ranking.push({ name, score });
-  ranking.sort((a, b) => b.score - a.score);
-  localStorage.setItem("doodle_rank", JSON.stringify(ranking.slice(0, 10)));
-}
-// 랭킹 화면 보여주기
-function showRanking() {
-  document.getElementById("home-screen").style.display = "none";
-  document.getElementById("ranking-screen").style.display = "block";
-  let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
-  let listHTML = ranking
-    .map((i, idx) => `<div>${idx + 1}. ${i.name} - ${i.score}s</div>`)
-    .join("");
-  document.getElementById("ranking-list").innerHTML = listHTML || "NO DATA";
-}
-// 내 랭킹 보여주기
-function showMyRank(score) {
-  let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
-  let rank = ranking.findIndex((i) => i.score === score) + 1;
-  document.getElementById("my-rank").innerText = `YOUR RANK: ${rank}`;
-}
-// 홈 화면으로 돌아가기
-function showHome() {
-  gameState = "HOME";
-  resetPlayerAvatar();
-  document
-    .querySelectorAll(".screen")
-    .forEach((s) => (s.style.display = "none"));
-  document.getElementById("home-screen").style.display = "block";
 }
 
 function windowResized() {

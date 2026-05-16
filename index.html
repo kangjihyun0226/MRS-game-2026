@@ -10,7 +10,6 @@
   </head>
   <body>
     <div id="ui-layer">
-      <!-- 홈 화면 -->
       <div id="home-screen" class="screen">
         <h1>DOODLE DASH</h1>
         <input
@@ -28,14 +27,21 @@
         <button onclick="showRanking()">RANKING</button>
       </div>
 
-      <!-- 랭킹 화면 -->
       <div id="ranking-screen" class="screen" style="display: none">
-        <h1>TOP 10</h1>
+        <h1>TOP 10 </h1>
+
         <div id="ranking-list"></div>
+
+        <button
+          onclick="clearRanking()"
+          style="background: #ff3366; margin-bottom: 10px; font-weight: bold"
+        >
+          RESET RANKING
+        </button>
+
         <button onclick="showHome()">HOME</button>
       </div>
 
-      <!-- 게임 오버 화면 -->
       <div id="gameover-screen" class="screen" style="display: none">
         <h1>GAME OVER</h1>
         <p id="final-score"></p>
@@ -45,6 +51,7 @@
     </div>
 
     <script src="sketch02.js"></script>
+    <script src="sketch03.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>
