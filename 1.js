@@ -1,23 +1,18 @@
 let video;
 let faceMesh;
 let faces = [];
-let gameState = 'HOME';
+let gameState = "HOME";
 let pipes = [];
 let balls = [];
 let score = 0.0;
 let countdown = 3;
-let userNickname = '';
+let userNickname = "";
 let playerAvatar = null;
 let playerFrameImages = [];
 
 // 하트(목숨) 및 기회 저장 제어 변수
 let lives = 3;
 let attemptScores = [];
-
-let bgImg; // [추가] 배경화면 SVG 이미지를 저장할 변수
-let longImages = []; // [추가] long1~8 장애물 SVG 이미지를 저장할 배열 변수
-let moveImages = []; // [추가] move1~30 장애물 SVG 이미지를 저장할 배열 변수
-let bgX = 0; // [추가] 배경의 무한 스크롤 X축 위치 기록 변수
 
 const FACE_OVAL_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
@@ -28,12 +23,12 @@ const FACE_OVAL_INDICES = [
 const PLAYER_FRAME_ANIMATION_MS = 140;
 const PLAYER_FRAME_ASSETS = [
   {
-    path: 'doodle_run (1).svg',
+    path: "doodle_run (1).svg",
     viewBox: { width: 128.46, height: 163.38 },
     circle: { cx: 64.23, cy: 82.26, r: 64.23 },
   },
   {
-    path: 'doodle_run (2).svg',
+    path: "doodle_run (2).svg",
     viewBox: { width: 178.97, height: 154.98 },
     circle: { cx: 86.42, cy: 82.13, r: 64.23 },
   },
@@ -57,14 +52,6 @@ const options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: true };
 function preload() {
   faceMesh = ml5.faceMesh(options);
   playerFrameImages = PLAYER_FRAME_ASSETS.map((frame) => loadImage(frame.path));
-
-  bgImg = loadImage('background.svg'); // [추가] 배경화면 SVG 파일 사전 로드
-  for (let i = 1; i <= 8; i++) {
-    longImages.push(loadImage(`svg/long${i}.svg`));
-  } // [추가] 기둥 장애물 SVG 파일 8개 사전 로드
-  for (let i = 1; i <= 30; i++) {
-    moveImages.push(loadImage(`svg/move${i}.svg`));
-  } // [추가] 공 장애물 SVG 파일 30개 사전 로드
 }
 
 function setup() {
@@ -230,7 +217,7 @@ function drawPlayerFrame(x, y, holeSize) {
 function drawAvatarToCanvas(targetCanvas) {
   if (!targetCanvas) return;
 
-  let context = targetCanvas.getContext('2d');
+  let context = targetCanvas.getContext("2d");
   context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
   if (!playerAvatar) return;
 
@@ -266,19 +253,19 @@ function drawAvatarToCanvas(targetCanvas) {
 }
 
 function updateFacePreview() {
-  let previewCanvas = document.getElementById('face-preview');
-  let previewLabel = document.getElementById('face-preview-label');
+  let previewCanvas = document.getElementById("face-preview");
+  let previewLabel = document.getElementById("face-preview-label");
 
   drawAvatarToCanvas(previewCanvas);
   if (previewLabel)
-    previewLabel.innerText = playerAvatar ? 'FACE READY' : 'NO FACE SCANNED';
+    previewLabel.innerText = playerAvatar ? "FACE READY" : "NO FACE SCANNED";
 }
 
 function scanFace() {
   let nextAvatar = capturePlayerAvatar();
   if (!nextAvatar) {
     window.alert(
-      '얼굴이 아직 감지되지 않았습니다. 카메라 정면을 보고 다시 스캔해주세요.',
+      "얼굴이 아직 감지되지 않았습니다. 카메라 정면을 보고 다시 스캔해주세요.",
     );
     return;
   }
@@ -291,26 +278,8 @@ function resetPlayerAvatar() {
   updateFacePreview();
 }
 
-function drawBackground() {
-  background(255);
-
-  // [추가] 30% 투명도 및 무한 줌인 스크롤 배경 구현을 위한 신규 함수 추가
-  tint(255, 76.5); // [추가] 요구사항 1-1: 파일 투명도 30% 설정 (255 * 0.3)
-  let zoom = 1.5; // [추가] 요구사항 1-2: 확대 비율 설정
-  let bw = width * zoom; // [추가] 확대된 배경 가로폭 계산
-  let bh = height * zoom; // [추가] 확대된 배경 세로폭 계산
-  let by = (height - bh) / 2; // [추가] 화면 중앙 정렬을 위한 Y축 보정값 계산
-  image(bgImg, bgX, by, bw, bh); // [추가] 첫 번째 스크롤 배경 이미지 출력
-  image(bgImg, bgX + bw, by, bw, bh); // [추가] 연속성을 위한 두 번째 배경 이미지 출력
-  bgX -= currentSpeed * 0.4; // [추가] 게임 속도와 연동하여 왼쪽으로 배경 이동
-  if (bgX <= -bw) {
-    bgX = 0;
-  } // [추가] 완전히 배경을 벗어나면 다시 X 좌표 초기화
-  noTint(); // [추가] 이후 오브젝트 렌더링에 영향을 주지 않도록 투명도 초기화
-}
-
 function draw() {
-  drawBackground(); // [수정] background(255) 제거 후 실시간 움직이는 확대 SVG 배경화면 렌더링 추가
+  background(255);
   push();
   translate(width, 0);
   scale(-1, 1);
@@ -318,8 +287,8 @@ function draw() {
   image(video, 0, 0, width, height);
   pop();
 
-  if (gameState === 'COUNT') drawCountdown();
-  else if (gameState === 'PLAY') runGame();
+  if (gameState === "COUNT") drawCountdown();
+  else if (gameState === "PLAY") runGame();
 
   drawCharacter();
   updateFacePreview();
@@ -347,9 +316,10 @@ function drawCharacter() {
     playerY = y;
   }
 }
+
 function clearRanking() {
-  if (confirm('진짜로 모든 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️')) {
-    localStorage.removeItem('doodle_rank'); // 로컬스토리지 데이터 삭제
+  if (confirm("진짜로 모든 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️")) {
+    localStorage.removeItem("doodle_rank"); // 로컬스토리지 데이터 삭제
     showRanking(); // 지워진 상태(NO DATA)로 랭킹 화면 실시간 새로고침
   }
 }
@@ -357,3 +327,4 @@ function clearRanking() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
+
