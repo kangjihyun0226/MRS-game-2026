@@ -10,14 +10,13 @@ let userNickname = "";
 let playerAvatar = null;
 let playerFrameImages = [];
 
-// 하트(목숨) 및 기회 저장 제어 변수
 let lives = 3;
 let attemptScores = [];
 
-let bgImg; // 배경화면 SVG 이미지 변수
-let longImages = []; // long1~8 장애물 SVG 이미지 배열
-let moveImages = []; // move1~30 장애물 SVG 이미지 배열
-let bgX = 0; // 배경 무한 스크롤 X축 위치 변수
+let bgImg;
+let longImages = [];
+let moveImages = [];
+let bgX = 0;
 
 const FACE_OVAL_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
@@ -44,7 +43,6 @@ let currentSpeed = 6;
 let spawnInterval = 80;
 let playerX, playerY;
 
-// 설정된 플레이어 스케일 유지
 const PLAYER_HITBOX_RADIUS = 42;
 const PLAYER_VISUAL_SIZE = 100;
 const PREVIEW_HOLE_SIZE_RATIO = 0.62;
@@ -52,24 +50,18 @@ const PREVIEW_HOLE_SIZE_RATIO = 0.62;
 let lastPipeTop = -1;
 let lastPipeSpacing = -1;
 
-// 최적화: maxFaces를 1로 고정하여 추적 부하 최소화
 const options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: true };
 
-// 최적화: DOM 탐색 비용 최소화를 위해 캐싱 변수 선언
+// DOM 캐싱 변수
 let previewCanvasCache = null;
 let previewLabelCache = null;
 
 function preload() {
   faceMesh = ml5.faceMesh(options);
   playerFrameImages = PLAYER_FRAME_ASSETS.map((frame) => loadImage(frame.path));
-
   bgImg = loadImage("background.svg");
-  for (let i = 1; i <= 8; i++) {
-    longImages.push(loadImage(`svg/long${i}.svg`));
-  }
-  for (let i = 1; i <= 30; i++) {
-    moveImages.push(loadImage(`svg/move${i}.svg`));
-  }
+  for (let i = 1; i <= 8; i++) longImages.push(loadImage(`svg/long${i}.svg`));
+  for (let i = 1; i <= 30; i++) moveImages.push(loadImage(`svg/move${i}.svg`));
 }
 
 function setup() {
@@ -80,36 +72,13 @@ function setup() {
   video.hide();
   faceMesh.detectStart(video, gotFaces);
 
-  // DOM 요소 최초 캐싱
   previewCanvasCache = document.getElementById("face-preview");
   previewLabelCache = document.getElementById("face-preview-label");
-
   updateFacePreview();
 }
 
 function gotFaces(results) {
   faces = results;
-}
-
-function getFaceBounds(face) {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  const len = face.keypoints.length;
-  for (let i = 0; i < len; i++) {
-    const pt = face.keypoints[i];
-    if (pt.x < minX) minX = pt.x;
-    if (pt.x > maxX) maxX = pt.x;
-    if (pt.y < minY) minY = pt.y;
-    if (pt.y > maxY) maxY = pt.y;
-  }
-  return {
-    centerX: (minX + maxX) * 0.5,
-    centerY: (minY + maxY) * 0.5,
-    width: maxX - minX,
-    height: maxY - minY,
-  };
 }
 
 function getFaceOvalPoints(face) {
@@ -135,12 +104,11 @@ function getBoundsFromPoints(points, videoWidth) {
 
 function capturePlayerAvatar() {
   if (faces.length === 0 || !video) return null;
-
   let face = faces[0];
   let ovalPoints = getFaceOvalPoints(face);
   let bounds = getBoundsFromPoints(ovalPoints, video.width);
-  let paddingX = bounds.width * 0.08;
-  let paddingY = bounds.height * 0.08;
+  let paddingX = bounds.width * 0.08,
+    paddingY = bounds.height * 0.08;
   let sourceX = floor(constrain(bounds.minX - paddingX, 0, video.width - 1));
   let sourceY = floor(constrain(bounds.minY - paddingY, 0, video.height - 1));
   let sourceW = ceil(
@@ -152,11 +120,9 @@ function capturePlayerAvatar() {
 
   let avatarGraphic = createGraphics(sourceW, sourceH);
   avatarGraphic.clear();
-
   let ctx = avatarGraphic.drawingContext;
   ctx.save();
   ctx.beginPath();
-
   const len = ovalPoints.length;
   for (let i = 0; i < len; i++) {
     let pointX = video.width - ovalPoints[i].x - sourceX;
@@ -164,7 +130,6 @@ function capturePlayerAvatar() {
     if (i === 0) ctx.moveTo(pointX, pointY);
     else ctx.lineTo(pointX, pointY);
   }
-
   ctx.closePath();
   ctx.clip();
   avatarGraphic.image(
@@ -179,18 +144,16 @@ function capturePlayerAvatar() {
     sourceH,
   );
   ctx.restore();
-
   return avatarGraphic;
 }
 
 function drawAvatarCircle(x, y, size) {
   if (!playerAvatar) return;
-
   let source = playerAvatar.canvas || playerAvatar.elt;
   let targetSize = size * 1.12;
   let scale = max(targetSize / source.width, targetSize / source.height);
-  let drawWidth = source.width * scale;
-  let drawHeight = source.height * scale;
+  let drawWidth = source.width * scale,
+    drawHeight = source.height * scale;
 
   push();
   let ctx = drawingContext;
@@ -222,10 +185,8 @@ function getCurrentPlayerFrame() {
 function drawPlayerFrame(x, y, holeSize) {
   let frame = getCurrentPlayerFrame();
   if (!frame || !frame.image) return;
-
   let frameMeta = frame.meta;
   let frameScale = holeSize / (frameMeta.circle.r * 2);
-
   image(
     frame.image,
     x - frameMeta.circle.cx * frameScale,
@@ -237,11 +198,9 @@ function drawPlayerFrame(x, y, holeSize) {
 
 function drawAvatarToCanvas(targetCanvas) {
   if (!targetCanvas) return;
-
   let context = targetCanvas.getContext("2d");
   context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
   if (!playerAvatar) return;
-
   let frame = getCurrentPlayerFrame();
   if (!frame || !frame.image) return;
 
@@ -253,10 +212,10 @@ function drawAvatarToCanvas(targetCanvas) {
   let frameScale = holeSize / (frameMeta.circle.r * 2);
   let targetSize = holeSize * 1.12;
   let avatarScale = max(targetSize / source.width, targetSize / source.height);
-  let drawWidth = source.width * avatarScale;
-  let drawHeight = source.height * avatarScale;
-  let centerX = targetCanvas.width * 0.5;
-  let centerY = targetCanvas.height * 0.5;
+  let drawWidth = source.width * avatarScale,
+    drawHeight = source.height * avatarScale;
+  let centerX = targetCanvas.width * 0.5,
+    centerY = targetCanvas.height * 0.5;
 
   context.save();
   context.beginPath();
@@ -280,15 +239,11 @@ function drawAvatarToCanvas(targetCanvas) {
 }
 
 function updateFacePreview() {
-  // 최적화: 캐싱된 DOM 변수 활용하여 매 프레임 탐색을 방지
-  if (previewCanvasCache) {
-    drawAvatarToCanvas(previewCanvasCache);
-  }
-  if (previewLabelCache) {
+  if (previewCanvasCache) drawAvatarToCanvas(previewCanvasCache);
+  if (previewLabelCache)
     previewLabelCache.innerText = playerAvatar
       ? "FACE READY"
       : "NO FACE SCANNED";
-  }
 }
 
 function scanFace() {
@@ -310,18 +265,15 @@ function resetPlayerAvatar() {
 
 function drawBackground() {
   background(255);
-
   tint(255, 30);
   let zoom = 1.5;
-  let bw = width * zoom;
-  let bh = height * zoom;
+  let bw = width * zoom,
+    bh = height * zoom;
   let by = (height - bh) * 0.5;
   image(bgImg, bgX, by, bw, bh);
   image(bgImg, bgX + bw, by, bw, bh);
   bgX -= currentSpeed * 0.4;
-  if (bgX <= -bw) {
-    bgX = 0;
-  }
+  if (bgX <= -bw) bgX = 0;
   noTint();
 }
 
@@ -339,9 +291,10 @@ function draw() {
 
   drawCharacter();
 
-  // 중요 고효율 최적화: 대기화면이나 카메라 스캔 완료 시점에만 돌리던 로직이 draw()에 반복 실행되던 것을 조건부 렌더링으로 방지 가능하지만,
-  // UX 완전 유지를 요구했으므로 캐싱 최적화된 상태로 유지합니다.
-  updateFacePreview();
+  // [초고성능 패치]: 플레이 중일 때는 굳이 웹캠 미니미 미리보기 창을 매 프레임 그릴 필요가 없으므로 대기실 상태에서만 렌더링하여 CPU 점유율 세이브
+  if (gameState === "HOME" || gameState === "GAMEOVER") {
+    updateFacePreview();
+  }
 }
 
 function drawCharacter() {

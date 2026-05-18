@@ -1,17 +1,14 @@
-// 최초 게임 실행 시작 단추
 function startGame() {
   userNickname = document.getElementById("nickname").value || "ANON";
   if (!playerAvatar) {
     window.alert("먼저 SCAN FACE 버튼으로 얼굴을 스캔해주세요.");
     return;
   }
-
   lives = 3;
   attemptScores = [];
   prepareNextAttempt();
 }
 
-// 각각의 시도 단계 진입 카운트다운 빌더
 function prepareNextAttempt() {
   document.getElementById("home-screen").style.display = "none";
   document.getElementById("gameover-screen").style.display = "none";
@@ -33,15 +30,12 @@ function prepareNextAttempt() {
   }, 1000);
 }
 
-// 사망 시 기회 잔여 연산 로직
 function playerDie() {
   lives--;
   attemptScores.push(score);
 
   if (lives > 0) {
     gameState = "GAMEOVER";
-
-    // 캐싱을 이용해 다중 접근 변수를 일원화 관리 최적화 유도 가능하나 가독성을 위해 직접 바인딩 유지
     document.getElementById("gameover-screen").style.display = "block";
     document.getElementById("final-score").innerText =
       "도전 기록: " + score.toFixed(3) + "s";
@@ -69,21 +63,11 @@ function drawCountdown() {
   text(countdown, width * 0.5, height * 0.5);
 }
 
-// 최종 3회 기회 소진 시 마감 처리 함수
 function endGame() {
   gameState = "GAMEOVER";
   let bestScore = max(attemptScores);
-
   let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
-  let isTop8 = false;
-
-  if (ranking.length < 8) {
-    isTop8 = true;
-  } else {
-    if (bestScore > ranking[7].score) {
-      isTop8 = true;
-    }
-  }
+  let isTop8 = ranking.length < 8 || bestScore > ranking[7].score;
 
   saveScore(userNickname, bestScore);
   document.getElementById("gameover-screen").style.display = "block";
@@ -111,7 +95,6 @@ function endGame() {
     actionBtn.innerText = "HOME";
     actionBtn.setAttribute("onclick", "showHome()");
   }
-
   showMyRank(bestScore);
 }
 
@@ -125,29 +108,24 @@ function saveScore(name, finalBestScore) {
 function showRanking() {
   document.getElementById("home-screen").style.display = "none";
   document.getElementById("ranking-screen").style.display = "block";
-
   let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
   let listHTML = ranking
     .map(
       (i, idx) => `<div>${idx + 1}. ${i.name} - ${i.score.toFixed(3)}s</div>`,
     )
     .join("");
-
   document.getElementById("ranking-list").innerHTML = listHTML || "NO DATA";
 }
 
 function showMyRank(finalBestScore) {
   let ranking = JSON.parse(localStorage.getItem("doodle_rank")) || [];
   let formattedScore = parseFloat(finalBestScore.toFixed(3));
-
   let rank =
     ranking.findIndex(
       (i) => i.name === userNickname && abs(i.score - formattedScore) < 0.0001,
     ) + 1;
 
-  if (rank <= 0) {
-    rank = ranking.findIndex((i) => formattedScore >= i.score) + 1;
-  }
+  if (rank <= 0) rank = ranking.findIndex((i) => formattedScore >= i.score) + 1;
 
   document.getElementById("my-rank").innerText =
     rank > 0 && rank <= ranking.length
