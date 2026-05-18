@@ -9,15 +9,12 @@ let countdown = 3;
 let userNickname = '';
 let playerAvatar = null;
 let playerFrameImages = [];
-
-// 하트(목숨) 및 기회 저장 제어 변수
 let lives = 3;
 let attemptScores = [];
-
-let bgImg; // [추가] 배경화면 SVG 이미지를 저장할 변수
-let longImages = []; // [추가] long1~8 장애물 SVG 이미지를 저장할 배열 변수
-let moveImages = []; // [추가] move1~30 장애물 SVG 이미지를 저장할 배열 변수
-let bgX = 0; // [추가] 배경의 무한 스크롤 X축 위치 기록 변수
+let bgImg;
+let longImages = [];
+let moveImages = [];
+let bgX = 0;
 
 const FACE_OVAL_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
@@ -39,32 +36,25 @@ const PLAYER_FRAME_ASSETS = [
   },
 ];
 
-let gameStartTime;
-let currentSpeed = 6;
-let spawnInterval = 80;
-let playerX, playerY;
-
-// 설정된 플레이어 스케일 유지
+let gameStartTime,
+  currentSpeed = 6,
+  spawnInterval = 80,
+  playerX,
+  playerY;
 const PLAYER_HITBOX_RADIUS = 42;
 const PLAYER_VISUAL_SIZE = 100;
 const PREVIEW_HOLE_SIZE_RATIO = 0.62;
-
-let lastPipeTop = -1;
-let lastPipeSpacing = -1;
+let lastPipeTop = -1,
+  lastPipeSpacing = -1;
 
 const options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: true };
 
 function preload() {
   faceMesh = ml5.faceMesh(options);
   playerFrameImages = PLAYER_FRAME_ASSETS.map((frame) => loadImage(frame.path));
-
-  bgImg = loadImage('background.svg'); // [추가] 배경화면 SVG 파일 사전 로드
-  for (let i = 1; i <= 8; i++) {
-    longImages.push(loadImage(`svg/long${i}.svg`));
-  } // [추가] 기둥 장애물 SVG 파일 8개 사전 로드
-  for (let i = 1; i <= 30; i++) {
-    moveImages.push(loadImage(`svg/move${i}.svg`));
-  } // [추가] 공 장애물 SVG 파일 30개 사전 로드
+  bgImg = loadImage('background.svg');
+  for (let i = 1; i <= 8; i++) longImages.push(loadImage(`svg/long${i}.svg`));
+  for (let i = 1; i <= 30; i++) moveImages.push(loadImage(`svg/move${i}.svg`));
 }
 
 function setup() {
@@ -82,18 +72,16 @@ function gotFaces(results) {
 }
 
 function getFaceBounds(face) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (let point of face.keypoints) {
     minX = min(minX, point.x);
     minY = min(minY, point.y);
     maxX = max(maxX, point.x);
     maxY = max(maxY, point.y);
   }
-
   return {
     centerX: (minX + maxX) / 2,
     centerY: (minY + maxY) / 2,
@@ -107,11 +95,10 @@ function getFaceOvalPoints(face) {
 }
 
 function getBoundsFromPoints(points, videoWidth) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (let point of points) {
     let mirroredX = videoWidth - point.x;
     minX = min(minX, mirroredX);
@@ -119,25 +106,15 @@ function getBoundsFromPoints(points, videoWidth) {
     maxX = max(maxX, mirroredX);
     maxY = max(maxY, point.y);
   }
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    width: maxX - minX,
-    height: maxY - minY,
-  };
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
 }
 
 function capturePlayerAvatar() {
   if (faces.length === 0 || !video) return null;
-
-  let face = faces[0];
-  let ovalPoints = getFaceOvalPoints(face);
+  let ovalPoints = getFaceOvalPoints(faces[0]);
   let bounds = getBoundsFromPoints(ovalPoints, video.width);
-  let paddingX = bounds.width * 0.08;
-  let paddingY = bounds.height * 0.08;
+  let paddingX = bounds.width * 0.08,
+    paddingY = bounds.height * 0.08;
   let sourceX = floor(constrain(bounds.minX - paddingX, 0, video.width - 1));
   let sourceY = floor(constrain(bounds.minY - paddingY, 0, video.height - 1));
   let sourceW = ceil(
@@ -146,23 +123,19 @@ function capturePlayerAvatar() {
   let sourceH = ceil(
     constrain(bounds.height + paddingY * 2, 1, video.height - sourceY),
   );
+
   let avatarGraphic = createGraphics(sourceW, sourceH);
-
   avatarGraphic.clear();
-  avatarGraphic.drawingContext.save();
-  avatarGraphic.drawingContext.beginPath();
-
-  for (let i = 0; i < ovalPoints.length; i++) {
-    let point = ovalPoints[i];
-    let pointX = video.width - point.x - sourceX;
-    let pointY = point.y - sourceY;
-
-    if (i === 0) avatarGraphic.drawingContext.moveTo(pointX, pointY);
-    else avatarGraphic.drawingContext.lineTo(pointX, pointY);
-  }
-
-  avatarGraphic.drawingContext.closePath();
-  avatarGraphic.drawingContext.clip();
+  let ctx = avatarGraphic.drawingContext;
+  ctx.save();
+  ctx.beginPath();
+  ovalPoints.forEach((p, i) => {
+    let px = video.width - p.x - sourceX,
+      py = p.y - sourceY;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.closePath();
+  ctx.clip();
   avatarGraphic.image(
     video,
     0,
@@ -174,28 +147,29 @@ function capturePlayerAvatar() {
     sourceW,
     sourceH,
   );
-  avatarGraphic.drawingContext.restore();
-
+  ctx.restore();
   return avatarGraphic;
 }
 
 function drawAvatarCircle(x, y, size) {
   if (!playerAvatar) return;
-
   let source = playerAvatar.canvas || playerAvatar.elt;
-  let targetSize = size * 1.12;
-  let scale = max(targetSize / source.width, targetSize / source.height);
-  let drawWidth = source.width * scale;
-  let drawHeight = source.height * scale;
-  let offsetX = x - drawWidth / 2;
-  let offsetY = y - drawHeight / 2;
+  let scale = max((size * 1.12) / source.width, (size * 1.12) / source.height);
+  let drawWidth = source.width * scale,
+    drawHeight = source.height * scale;
 
   push();
   drawingContext.save();
   drawingContext.beginPath();
   drawingContext.arc(x, y, size / 2, 0, TWO_PI);
   drawingContext.clip();
-  image(playerAvatar, offsetX, offsetY, drawWidth, drawHeight);
+  image(
+    playerAvatar,
+    x - drawWidth / 2,
+    y - drawHeight / 2,
+    drawWidth,
+    drawHeight,
+  );
   drawingContext.restore();
   pop();
 }
@@ -212,63 +186,62 @@ function getCurrentPlayerFrame() {
 
 function drawPlayerFrame(x, y, holeSize) {
   let frame = getCurrentPlayerFrame();
-  if (!frame) return;
-
-  let frameImage = frame.image;
-  let frameMeta = frame.meta;
-  if (!frameImage) return;
-
-  let frameScale = holeSize / (frameMeta.circle.r * 2);
-  let frameWidth = frameMeta.viewBox.width * frameScale;
-  let frameHeight = frameMeta.viewBox.height * frameScale;
-  let frameX = x - frameMeta.circle.cx * frameScale;
-  let frameY = y - frameMeta.circle.cy * frameScale;
-
-  image(frameImage, frameX, frameY, frameWidth, frameHeight);
+  if (!frame || !frame.image) return;
+  let frameScale = holeSize / (frame.meta.circle.r * 2);
+  image(
+    frame.image,
+    x - frame.meta.circle.cx * frameScale,
+    y - frame.meta.circle.cy * frameScale,
+    frame.meta.viewBox.width * frameScale,
+    frame.meta.viewBox.height * frameScale,
+  );
 }
 
 function drawAvatarToCanvas(targetCanvas) {
   if (!targetCanvas) return;
-
   let context = targetCanvas.getContext('2d');
   context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
   if (!playerAvatar) return;
-
   let frame = getCurrentPlayerFrame();
   if (!frame || !frame.image) return;
 
-  let source = playerAvatar.canvas || playerAvatar.elt;
-  let frameSource = frame.image.canvas || frame.image.elt;
-  let frameMeta = frame.meta;
+  let source = playerAvatar.canvas || playerAvatar.elt,
+    frameSource = frame.image.canvas || frame.image.elt,
+    m = frame.meta;
   let holeSize =
     min(targetCanvas.width, targetCanvas.height) * PREVIEW_HOLE_SIZE_RATIO;
-  let frameScale = holeSize / (frameMeta.circle.r * 2);
-  let targetSize = holeSize * 1.12;
-  let avatarScale = max(targetSize / source.width, targetSize / source.height);
-  let drawWidth = source.width * avatarScale;
-  let drawHeight = source.height * avatarScale;
-  let centerX = targetCanvas.width / 2;
-  let centerY = targetCanvas.height / 2;
-  let avatarX = centerX - drawWidth / 2;
-  let avatarY = centerY - drawHeight / 2;
-  let frameWidth = frameMeta.viewBox.width * frameScale;
-  let frameHeight = frameMeta.viewBox.height * frameScale;
-  let frameX = centerX - frameMeta.circle.cx * frameScale;
-  let frameY = centerY - frameMeta.circle.cy * frameScale;
+  let frameScale = holeSize / (m.circle.r * 2),
+    avatarScale = max(
+      (holeSize * 1.12) / source.width,
+      (holeSize * 1.12) / source.height,
+    );
+  let cx = targetCanvas.width / 2,
+    cy = targetCanvas.height / 2;
 
   context.save();
   context.beginPath();
-  context.arc(centerX, centerY, holeSize / 2, 0, Math.PI * 2);
+  context.arc(cx, cy, holeSize / 2, 0, Math.PI * 2);
   context.clip();
-  context.drawImage(source, avatarX, avatarY, drawWidth, drawHeight);
+  context.drawImage(
+    source,
+    cx - (source.width * avatarScale) / 2,
+    cy - (source.height * avatarScale) / 2,
+    source.width * avatarScale,
+    source.height * avatarScale,
+  );
   context.restore();
-  context.drawImage(frameSource, frameX, frameY, frameWidth, frameHeight);
+  context.drawImage(
+    frameSource,
+    cx - m.circle.cx * frameScale,
+    cy - m.circle.cy * frameScale,
+    m.viewBox.width * frameScale,
+    m.viewBox.height * frameScale,
+  );
 }
 
 function updateFacePreview() {
-  let previewCanvas = document.getElementById('face-preview');
-  let previewLabel = document.getElementById('face-preview-label');
-
+  let previewCanvas = document.getElementById('face-preview'),
+    previewLabel = document.getElementById('face-preview-label');
   drawAvatarToCanvas(previewCanvas);
   if (previewLabel)
     previewLabel.innerText = playerAvatar ? 'FACE READY' : 'NO FACE SCANNED';
@@ -276,12 +249,10 @@ function updateFacePreview() {
 
 function scanFace() {
   let nextAvatar = capturePlayerAvatar();
-  if (!nextAvatar) {
-    window.alert(
+  if (!nextAvatar)
+    return window.alert(
       '얼굴이 아직 감지되지 않았습니다. 카메라 정면을 보고 다시 스캔해주세요.',
     );
-    return;
-  }
   playerAvatar = nextAvatar;
   updateFacePreview();
 }
@@ -293,24 +264,19 @@ function resetPlayerAvatar() {
 
 function drawBackground() {
   background(255);
-
-  // [추가] 30% 투명도 및 무한 줌인 스크롤 배경 구현을 위한 신규 함수 추가
-  tint(255, 76.5); // [추가] 요구사항 1-1: 파일 투명도 30% 설정 (255 * 0.3)
-  let zoom = 1.5; // [추가] 요구사항 1-2: 확대 비율 설정
-  let bw = width * zoom; // [추가] 확대된 배경 가로폭 계산
-  let bh = height * zoom; // [추가] 확대된 배경 세로폭 계산
-  let by = (height - bh) / 2; // [추가] 화면 중앙 정렬을 위한 Y축 보정값 계산
-  image(bgImg, bgX, by, bw, bh); // [추가] 첫 번째 스크롤 배경 이미지 출력
-  image(bgImg, bgX + bw, by, bw, bh); // [추가] 연속성을 위한 두 번째 배경 이미지 출력
-  bgX -= currentSpeed * 0.4; // [추가] 게임 속도와 연동하여 왼쪽으로 배경 이동
-  if (bgX <= -bw) {
-    bgX = 0;
-  } // [추가] 완전히 배경을 벗어나면 다시 X 좌표 초기화
-  noTint(); // [추가] 이후 오브젝트 렌더링에 영향을 주지 않도록 투명도 초기화
+  tint(255, 30);
+  let bw = width * 1.5,
+    bh = height * 1.5,
+    by = (height - bh) / 2;
+  image(bgImg, bgX, by, bw, bh);
+  image(bgImg, bgX + bw, by, bw, bh);
+  bgX -= currentSpeed * 0.4;
+  if (bgX <= -bw) bgX = 0;
+  noTint();
 }
 
 function draw() {
-  drawBackground(); // [수정] background(255) 제거 후 실시간 움직이는 확대 SVG 배경화면 렌더링 추가
+  drawBackground();
   push();
   translate(width, 0);
   scale(-1, 1);
@@ -326,31 +292,30 @@ function draw() {
 }
 
 function drawCharacter() {
-  if (faces.length > 0) {
-    let face = faces[0];
-    let nose = face.keypoints[1];
-    let x = map(nose.x, 0, 640, 0, width);
-    let y = map(nose.y, 0, 480, 0, height);
-    if (playerAvatar) {
-      drawAvatarCircle(x, y, PLAYER_VISUAL_SIZE);
-    } else {
-      stroke(0);
-      strokeWeight(3);
-      fill(255);
-      ellipse(x, y, PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE);
-    }
-    drawPlayerFrame(x, y, PLAYER_VISUAL_SIZE);
-    noStroke();
-    fill(255, 0, 0, 70);
-    ellipse(x, y, PLAYER_HITBOX_RADIUS * 2, PLAYER_HITBOX_RADIUS * 2);
-    playerX = x;
-    playerY = y;
+  if (faces.length === 0) return;
+  let nose = faces[0].keypoints[1];
+  let x = map(nose.x, 0, 640, 0, width),
+    y = map(nose.y, 0, 480, 0, height);
+  if (playerAvatar) {
+    drawAvatarCircle(x, y, PLAYER_VISUAL_SIZE);
+  } else {
+    stroke(0);
+    strokeWeight(3);
+    fill(255);
+    ellipse(x, y, PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE);
   }
+  drawPlayerFrame(x, y, PLAYER_VISUAL_SIZE);
+  noStroke();
+  fill(255, 0, 0, 70);
+  ellipse(x, y, PLAYER_HITBOX_RADIUS * 2, PLAYER_HITBOX_RADIUS * 2);
+  playerX = x;
+  playerY = y;
 }
+
 function clearRanking() {
   if (confirm('진짜로 모든 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️')) {
-    localStorage.removeItem('doodle_rank'); // 로컬스토리지 데이터 삭제
-    showRanking(); // 지워진 상태(NO DATA)로 랭킹 화면 실시간 새로고침
+    localStorage.removeItem('doodle_rank');
+    showRanking();
   }
 }
 
