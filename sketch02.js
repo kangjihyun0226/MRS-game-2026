@@ -53,24 +53,21 @@ class Ball {
       // [추가] 겹친 영역 세로 스캔 루프 (속도를 위해 4픽셀 간격 지정)
 
       for (let x = overlapLeft; x < overlapRight; x += step) {
-        // [추가] 겹친 영역 가로 스캔 루프 (속도를 위해 4픽셀 간격 지정)
-
+        // 1. 플레이어 원형 피격 범위 내부에 있을 때만 픽셀 좌표 매핑 진행
         if (dist(x, y, px, py) < pr) {
-          // [추가] 현재 체크 중인 픽셀점이 플레이어 원형 피격 범위 내부인지 판단
-          let imgX = floor(map(x, this.x, this.x + this.w, 0, this.img.width)); // [추가] 화면 좌표를 SVG 원본 이미지상의 가로 픽셀 인덱스로 매핑
-          let imgY = floor(map(y, this.y, this.y + this.h, 0, this.img.height)); // [추가] 화면 좌표를 SVG 원본 이미지상의 세로 픽셀 인덱스로 매핑
+          let imgX = floor(map(x, this.x, this.x + this.w, 0, this.img.width));
+          let imgY = floor(map(y, this.y, this.y + this.h, 0, this.img.height));
 
+          // 2. 좌표 유효성 검사 및 알파 채널 값을 한 번에 확인
           if (
             imgX >= 0 &&
             imgX < this.img.width &&
             imgY >= 0 &&
             imgY < this.img.height
           ) {
-            // [추가] 유효 배열 경계 범위 안정성 확인 검사
-            let pixelIndex = (imgX + imgY * this.img.width) * 4 + 3; // [추가] RGBA 픽셀 어레이 데이터에서 알파(Alpha) 투명도 채널 값의 위치 인덱스 역산
-            if (this.img.pixels[pixelIndex] > 50) {
-              return true;
-            } // [추가] 알파 채널 밀도가 50을 초과하면 실제 벡터 선에 닿은 것으로 충돌 리턴
+            let alphaIdx = (imgX + imgY * this.img.width) * 4 + 3;
+
+            if (this.img.pixels[alphaIdx] > 50) return true;
           }
         }
       }

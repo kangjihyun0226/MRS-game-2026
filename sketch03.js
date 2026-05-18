@@ -112,19 +112,19 @@ class Pipe {
     this.bottomY = this.top + this.spacing;
     this.bottomH = height - this.bottomY;
 
-    // [수정 완료] long6.svg(인덱스 5)만 비율 유지, 나머지는 가로폭 70 고정
-    if (longImages.indexOf(this.topImg) === 5) {
-      this.topW = this.top * (this.topImg.width / this.topImg.height);
-    } else {
-      this.topW = 70;
-    }
+    // // [수정 완료] long6.svg(인덱스 5)만 비율 유지, 나머지는 가로폭 70 고정
+    // if (longImages.indexOf(this.topImg) === 5) {
+    //   this.topW = this.top * (this.topImg.width / this.topImg.height);
+    // } else {
+    //   this.topW = 70;
+    // }
 
-    if (longImages.indexOf(this.bottomImg) === 5) {
-      this.bottomW =
-        this.bottomH * (this.bottomImg.width / this.bottomImg.height);
-    } else {
-      this.bottomW = 70;
-    }
+    // if (longImages.indexOf(this.bottomImg) === 5) {
+    //   this.bottomW =
+    //     this.bottomH * (this.bottomImg.width / this.bottomImg.height);
+    // } else {
+    //   this.bottomW = 70;
+    // }
   }
 
   show() {
