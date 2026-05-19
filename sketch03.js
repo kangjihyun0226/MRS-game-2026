@@ -28,6 +28,13 @@ function startGame() {
     window.alert("먼저 SCAN FACE 버튼으로 얼굴을 스캔해주세요.");
     return;
   }
+
+  let startSound = document.getElementById("audio-game-start");
+  if (startSound && typeof startSound.play === "function") {
+    startSound.currentTime = 0;
+    startSound.play().catch(() => {});
+  }
+
   lives = 3;
   attemptScores = [];
   prepareNextAttempt();
@@ -126,6 +133,20 @@ function endGame() {
       fsStyle.color = "#ff3366";
       fsStyle.fontWeight = "bold";
       fsStyle.lineHeight = "1.5";
+
+      let rankSound = document.getElementById("audio-rank");
+      if (rankSound && typeof rankSound.play === "function") {
+        rankSound.currentTime = 0;
+        rankSound.play().catch(() => {});
+      }
+
+      let end2Sound = document.getElementById("audio-end2");
+      if (end2Sound && typeof end2Sound.play === "function") {
+        end2Sound.currentTime = 0;
+        setTimeout(() => {
+          end2Sound.play().catch(() => {});
+        }, 600);
+      }
     } else {
       finalScoreElement.innerText =
         "최종 최고 기록: " + bestScore.toFixed(3) + "s";
