@@ -1,4 +1,3 @@
-
 // 1. 파이어베이스 초기화 설정 (제공해주신 주소 연동)
 
 const firebaseConfig = {
@@ -11,11 +10,20 @@ if (!firebase.apps.length) {
 }
 const database = firebase.database();
 
-
 // 2. 게임 시작 및 준비 함수들
 
 function startGame() {
-  userNickname = document.getElementById("nickname").value || "ANON";
+  userNickname = (document.getElementById("nickname").value || "").trim();
+  // 닉네임이 비어있으면 시작 불가
+  if (!userNickname) {
+    window.alert("게임을 시작하려면 닉네임을 입력해주세요.");
+    return;
+  }
+  // 전화번호와 게임 이름 입력값을 전역 변수에 저장
+  userPhone =
+    (document.getElementById("phone") || { value: "" }).value.trim() || "";
+  gameName =
+    (document.getElementById("game-name") || { value: "" }).value.trim() || "";
   if (!playerAvatar) {
     window.alert("먼저 SCAN FACE 버튼으로 얼굴을 스캔해주세요.");
     return;
@@ -45,7 +53,6 @@ function prepareNextAttempt() {
     }
   }, 1000);
 }
-
 
 // 3. 게임 오버 및 라운드 종료 처리
 
@@ -132,9 +139,7 @@ function endGame() {
   });
 }
 
-
 // 4. 파이어베이스 실시간 데이터 연동 함수들
-
 
 // 4-1. 실시간 데이터베이스에 점수 업로드
 function saveScore(name, finalBestScore) {
@@ -157,10 +162,12 @@ function saveScore(name, finalBestScore) {
       });
 
       if (matches.length === 0) {
-        // 해당 닉네임의 기록이 없으면 새로 추가
+        // 해당 닉네임의 기록이 없으면 새로 추가 (전화번호와 게임명 포함)
         return ranksRef.push({
           name: name,
           score: formattedScore,
+          phone: typeof userPhone !== "undefined" ? userPhone : "",
+          game: typeof gameName !== "undefined" ? gameName : "",
           timestamp: Date.now(),
         });
       }
@@ -169,29 +176,29 @@ function saveScore(name, finalBestScore) {
       matches.sort((a, b) => b.score - a.score);
       const best = matches[0];
 
-      if (formattedScore <= best.score + 0.0001) {
-        // 새 점수가 기존 최고보다 높지 않으면 아무 것도 변경하지 않음
-        // 단, 중복된 다른 레코드들은 삭제하여 한 닉네임당 하나만 남김
-        let removals = [];
-        for (let i = 1; i < matches.length; i++) {
-          removals.push(ranksRef.child(matches[i].key).remove());
-        }
-        return Promise.all(removals.length ? removals : [Promise.resolve()]);
-      } else {
-        // 새 점수가 더 높으면 최고 레코드를 갱신하고 나머지 중복 레코드 삭제
-        return ranksRef
-          .child(best.key)
-          .update({ score: formattedScore, timestamp: Date.now() })
-          .then(() => {
-            let removals = [];
-            for (let i = 1; i < matches.length; i++) {
-              removals.push(ranksRef.child(matches[i].key).remove());
-            }
-            return Promise.all(
-              removals.length ? removals : [Promise.resolve()],
-            );
-          });
+      // 항상 최고 레코드에는 최신 전화번호/게임명을 반영
+      let updates = {
+        phone: typeof userPhone !== "undefined" ? userPhone : "",
+        game: typeof gameName !== "undefined" ? gameName : "",
+        timestamp: Date.now(),
+      };
+
+      if (formattedScore > best.score + 0.0001) {
+        // 새 점수가 더 높으면 점수도 갱신
+        updates.score = formattedScore;
       }
+
+      return ranksRef
+        .child(best.key)
+        .update(updates)
+        .then(() => {
+          // 중복 레코드 삭제
+          let removals = [];
+          for (let i = 1; i < matches.length; i++) {
+            removals.push(ranksRef.child(matches[i].key).remove());
+          }
+          return Promise.all(removals.length ? removals : [Promise.resolve()]);
+        });
     })
     .then(() => {
       console.log("파이어베이스 서버에 실시간 점수 등록(또는 갱신) 완료!");
@@ -258,8 +265,6 @@ function showMyRank(finalBestScore) {
         : "YOUR RANK: 순위권 외";
   });
 }
-
-
 
 // 5. 대기실 복귀
 

@@ -7,6 +7,8 @@ let balls = [];
 let score = 0.0;
 let countdown = 3;
 let userNickname = "";
+let userPhone = "";
+let gameName = "";
 let playerAvatar = null;
 let playerFrameImages = [];
 

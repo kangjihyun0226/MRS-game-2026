@@ -75,7 +75,6 @@ function runGame() {
     if (p.offscreen()) pipes.splice(i, 1);
   }
 
-
   if (score >= 60.0) {
     let ballSpawnRate = max(55, 95 - floor((score - 60) * 0.2));
     let ballRateFloor = floor(ballSpawnRate);
@@ -189,6 +188,16 @@ class Pipe {
 
     imageMode(CORNER);
     image(this.bottomImg, this.x, this.bottomY, this.bottomW, this.bottomH);
+
+    // 히트박스 시각화: 상단/하단 장애물 영역을 반투명 빨간색으로 표시
+    push();
+    noStroke();
+    fill(255, 0, 0, 120);
+    // 상단 기둥 히트박스
+    rect(this.x, 0, this.topW, this.top);
+    // 하단 기둥 히트박스
+    rect(this.x, this.bottomY, this.bottomW, this.bottomH);
+    pop();
   }
 
   update() {
