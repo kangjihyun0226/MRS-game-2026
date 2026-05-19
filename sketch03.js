@@ -1,6 +1,6 @@
-// =================================================================
+
 // 1. 파이어베이스 초기화 설정 (제공해주신 주소 연동)
-// =================================================================
+
 const firebaseConfig = {
   databaseURL: "https://msg-game-2026-c370e-default-rtdb.firebaseio.com/",
 };
@@ -11,9 +11,9 @@ if (!firebase.apps.length) {
 }
 const database = firebase.database();
 
-// =================================================================
+
 // 2. 게임 시작 및 준비 함수들
-// =================================================================
+
 function startGame() {
   userNickname = document.getElementById("nickname").value || "ANON";
   if (!playerAvatar) {
@@ -46,9 +46,9 @@ function prepareNextAttempt() {
   }, 1000);
 }
 
-// =================================================================
+
 // 3. 게임 오버 및 라운드 종료 처리
-// =================================================================
+
 function playerDie() {
   lives--;
   attemptScores.push(score);
@@ -88,7 +88,7 @@ function endGame() {
 
   // [버그 수정]: 네트워크 상태와 상관없이 "무조건" 게임오버 화면 창부터 먼저 즉시 띄웁니다!
   document.getElementById("gameover-screen").style.display = "block";
-  document.getElementById("final-score").innerText = "기록 정산 중... 🧙‍♂️";
+  document.getElementById("final-score").innerText = "기록 정산 중... ";
   document.getElementById("my-rank").innerText = "잠시만 기다려주세요.";
 
   let actionBtn = document.querySelector("#gameover-screen button");
@@ -132,9 +132,9 @@ function endGame() {
   });
 }
 
-// =================================================================
+
 // 4. 파이어베이스 실시간 데이터 연동 함수들
-// =================================================================
+
 
 // 4-1. 실시간 데이터베이스에 점수 업로드
 function saveScore(name, finalBestScore) {
@@ -259,11 +259,10 @@ function showMyRank(finalBestScore) {
   });
 }
 
-// 4-4. (제거됨) 온라인 랭킹 초기화 함수는 삭제되었습니다.
 
-// =================================================================
+
 // 5. 대기실 복귀
-// =================================================================
+
 function showHome() {
   gameState = "HOME";
   resetPlayerAvatar();

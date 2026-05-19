@@ -75,7 +75,7 @@ function runGame() {
     if (p.offscreen()) pipes.splice(i, 1);
   }
 
-  // [수정 사항 반영]: 정확히 60초(1분) 경과 후부터 공 습격 개시!
+
   if (score >= 60.0) {
     let ballSpawnRate = max(55, 95 - floor((score - 60) * 0.2));
     let ballRateFloor = floor(ballSpawnRate);

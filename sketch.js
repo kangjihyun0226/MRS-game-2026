@@ -57,6 +57,7 @@ let previewCanvasCache = null;
 let previewLabelCache = null;
 
 function preload() {
+  // ml5.js의 FaceMesh 모델을 초기화하고, 게임에 필요한 이미지 자원들을 미리 로드합니다.
   faceMesh = ml5.faceMesh(options);
   playerFrameImages = PLAYER_FRAME_ASSETS.map((frame) => loadImage(frame.path));
   bgImg = loadImage("background.svg");
@@ -86,6 +87,7 @@ function getFaceOvalPoints(face) {
 }
 
 function getBoundsFromPoints(points, videoWidth) {
+  // 얼굴 랜드마크 포인트 배열과 비디오 너비를 받아서 얼굴 영역의 경계 사각형 정보를 계산합니다.
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,
@@ -103,6 +105,7 @@ function getBoundsFromPoints(points, videoWidth) {
 }
 
 function capturePlayerAvatar() {
+  // 현재 감지된 얼굴에서 타원형 영역을 추출하여 플레이어 아바타로 사용할 그래픽 객체를 생성합니다.
   if (faces.length === 0 || !video) return null;
   let face = faces[0];
   let ovalPoints = getFaceOvalPoints(face);
@@ -125,6 +128,7 @@ function capturePlayerAvatar() {
   ctx.beginPath();
   const len = ovalPoints.length;
   for (let i = 0; i < len; i++) {
+    // 얼굴 랜드마크 포인트를 순회하면서 타원형 클리핑 경로를 생성합니다. X 좌표는 미러링되어야 하므로 비디오 너비에서 빼줍니다.
     let pointX = video.width - ovalPoints[i].x - sourceX;
     let pointY = ovalPoints[i].y - sourceY;
     if (i === 0) ctx.moveTo(pointX, pointY);
@@ -148,6 +152,7 @@ function capturePlayerAvatar() {
 }
 
 function drawAvatarCircle(x, y, size) {
+  // 플레이어 아바타를 얼굴 타원형 영역에 맞춰 원형으로 렌더링하는 함수입니다. 아바타 이미지가 준비되지 않았으면 아무 것도 그리지 않습니다.
   if (!playerAvatar) return;
   let source = playerAvatar.canvas || playerAvatar.elt;
   let targetSize = size * 1.12;
@@ -279,7 +284,7 @@ function drawBackground() {
 
 function draw() {
   drawBackground();
-  // 웹캠 렌더링은 대기실과 게임오버 화면에서만 수행하여 플레이 중 렉을 감소시킵니다.
+
   if (gameState === "HOME" || gameState === "GAMEOVER") {
     push();
     translate(width, 0);
@@ -294,7 +299,6 @@ function draw() {
 
   drawCharacter();
 
-  // [초고성능 패치]: 플레이 중일 때는 굳이 웹캠 미니미 미리보기 창을 매 프레임 그릴 필요가 없으므로 대기실 상태에서만 렌더링하여 CPU 점유율 세이브
   if (gameState === "HOME" || gameState === "GAMEOVER") {
     updateFacePreview();
   }
@@ -316,14 +320,12 @@ function drawCharacter() {
     }
     drawPlayerFrame(x, y, PLAYER_VISUAL_SIZE);
     noStroke();
-    fill(255, 0, 0, 70);
+    fill(255, 0, 0, 0);
     ellipse(x, y, PLAYER_HITBOX_RADIUS * 2, PLAYER_HITBOX_RADIUS * 2);
     playerX = x;
     playerY = y;
   }
 }
-
-// (제거됨) 로컬 랭킹 초기화 함수는 보안상 및 데이터 보존을 위해 삭제되었습니다.
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
