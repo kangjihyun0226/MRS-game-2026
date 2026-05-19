@@ -86,7 +86,18 @@ function endGame() {
   gameState = "GAMEOVER";
   let bestScore = max(attemptScores);
 
-  // 파이어베이스에서 기존 전체 데이터를 임시로 읽어와 Top 8 여부 확인 및 랭킹 갱신 진행
+  // [버그 수정]: 네트워크 상태와 상관없이 "무조건" 게임오버 화면 창부터 먼저 즉시 띄웁니다!
+  document.getElementById("gameover-screen").style.display = "block";
+  document.getElementById("final-score").innerText = "기록 정산 중... 🧙‍♂️";
+  document.getElementById("my-rank").innerText = "잠시만 기다려주세요.";
+
+  let actionBtn = document.querySelector("#gameover-screen button");
+  if (actionBtn) {
+    actionBtn.innerText = "HOME";
+    actionBtn.setAttribute("onclick", "showHome()");
+  }
+
+  // 화면을 먼저 열어둔 상태에서, 파이어베이스 데이터를 안전하게 가져와 연산합니다.
   let ranksRef = database.ref("doodle_rank");
   ranksRef.once("value", (snapshot) => {
     let rankingArray = [];
@@ -116,19 +127,13 @@ function endGame() {
       fsStyle.fontWeight = "normal";
     }
 
-    let actionBtn = document.querySelector("#gameover-screen button");
-    if (actionBtn) {
-      actionBtn.innerText = "HOME";
-      actionBtn.setAttribute("onclick", "showHome()");
-    }
-
-    // 서버(파이어베이스)에 점수 저장 후, 내 등수 실시간 조회
+    // 서버(파이어베이스)에 내 점수를 등록하고 최종 등수를 UI에 출력합니다.
     saveScore(userNickname, bestScore);
   });
 }
 
 // =================================================================
-// 4. [온라인 변경] 파이어베이스 실시간 데이터 연동 함수들
+// 4. 파이어베이스 실시간 데이터 연동 함수들
 // =================================================================
 
 // 4-1. 실시간 데이터베이스에 점수 업로드
@@ -136,16 +141,60 @@ function saveScore(name, finalBestScore) {
   let formattedScore = parseFloat(finalBestScore.toFixed(3));
   let ranksRef = database.ref("doodle_rank");
 
-  // 파이어베이스에 데이터 밀어넣기
+  // 동일 닉네임의 기존 레코드를 찾아서 최고기록만 남기도록 처리
+  // 성능: 전체 스냅샷을 가져오는 대신 이름으로 필터링된 쿼리만 요청합니다.
   ranksRef
-    .push({
-      name: name,
-      score: formattedScore,
-      timestamp: Date.now(),
+    .orderByChild("name")
+    .equalTo(name)
+    .once("value")
+    .then((snapshot) => {
+      let matches = [];
+      snapshot.forEach((childSnapshot) => {
+        let v = childSnapshot.val();
+        if (v && v.name === name) {
+          matches.push({ key: childSnapshot.key, score: v.score });
+        }
+      });
+
+      if (matches.length === 0) {
+        // 해당 닉네임의 기록이 없으면 새로 추가
+        return ranksRef.push({
+          name: name,
+          score: formattedScore,
+          timestamp: Date.now(),
+        });
+      }
+
+      // 이미 여러 레코드가 있을 수 있으므로 최고점 레코드를 찾아 비교
+      matches.sort((a, b) => b.score - a.score);
+      const best = matches[0];
+
+      if (formattedScore <= best.score + 0.0001) {
+        // 새 점수가 기존 최고보다 높지 않으면 아무 것도 변경하지 않음
+        // 단, 중복된 다른 레코드들은 삭제하여 한 닉네임당 하나만 남김
+        let removals = [];
+        for (let i = 1; i < matches.length; i++) {
+          removals.push(ranksRef.child(matches[i].key).remove());
+        }
+        return Promise.all(removals.length ? removals : [Promise.resolve()]);
+      } else {
+        // 새 점수가 더 높으면 최고 레코드를 갱신하고 나머지 중복 레코드 삭제
+        return ranksRef
+          .child(best.key)
+          .update({ score: formattedScore, timestamp: Date.now() })
+          .then(() => {
+            let removals = [];
+            for (let i = 1; i < matches.length; i++) {
+              removals.push(ranksRef.child(matches[i].key).remove());
+            }
+            return Promise.all(
+              removals.length ? removals : [Promise.resolve()],
+            );
+          });
+      }
     })
     .then(() => {
-      console.log("파이어베이스 서버에 실시간 점수 등록 성공!");
-      // 저장이 완료된 뒤 최신 데이터를 기반으로 내 등수를 화면에 그려줍니다.
+      console.log("파이어베이스 서버에 실시간 점수 등록(또는 갱신) 완료!");
       showMyRank(finalBestScore);
     })
     .catch((error) => {
@@ -192,7 +241,7 @@ function showMyRank(finalBestScore) {
 
     rankingArray.sort((a, b) => b.score - a.score);
 
-    // 닉네임과 정확한 점수 오차값 검사를 통해 내 데이터 인덱스 확인
+    // 닉네임과 점수 오차값 검사를 통해 내 데이터 인덱스 확인
     let rank =
       rankingArray.findIndex(
         (i) =>
@@ -210,25 +259,7 @@ function showMyRank(finalBestScore) {
   });
 }
 
-// 4-4. [전체 리셋 변경] 모든 노트북의 데이터를 초기화 (주의 필요!)
-function clearRanking() {
-  if (
-    confirm(
-      "진짜로 '전 세계 모든 노트북'의 온라인 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️",
-    )
-  ) {
-    database
-      .ref("doodle_rank")
-      .remove()
-      .then(() => {
-        alert("온라인 랭킹이 성공적으로 초기화되었습니다.");
-        showRanking();
-      })
-      .catch((error) => {
-        console.error("초기화 실패:", error);
-      });
-  }
-}
+// 4-4. (제거됨) 온라인 랭킹 초기화 함수는 삭제되었습니다.
 
 // =================================================================
 // 5. 대기실 복귀

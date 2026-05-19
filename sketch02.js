@@ -46,9 +46,11 @@ function runGame() {
   currentSpeed = min(16, 6.5 + score * 0.045);
   spawnInterval = max(42, 85 - score * 0.2);
 
+  // 성능: floor(spawnInterval)를 한 번만 계산하여 반복 호출 비용을 줄임
+  let spawnFloor = floor(spawnInterval);
   let canSpawnPipe = false;
   if (pipes.length === 0) {
-    if (frameCount % floor(spawnInterval) === 0) canSpawnPipe = true;
+    if (spawnFloor > 0 && frameCount % spawnFloor === 0) canSpawnPipe = true;
   } else {
     let lastPipe = pipes[pipes.length - 1];
     let lastPipeMaxW = max(lastPipe.topW, lastPipe.bottomW);
@@ -56,13 +58,11 @@ function runGame() {
     let dynamicSafeGap = max(260, 340 - score * 0.5);
 
     if (width - lastPipeRightEdge >= dynamicSafeGap) {
-      if (frameCount % floor(spawnInterval) === 0) canSpawnPipe = true;
+      if (spawnFloor > 0 && frameCount % spawnFloor === 0) canSpawnPipe = true;
     }
   }
 
-  if (canSpawnPipe) {
-    pipes.push(new Pipe(currentSpeed, spawnInterval));
-  }
+  if (canSpawnPipe) pipes.push(new Pipe(currentSpeed, spawnInterval));
 
   for (let i = pipes.length - 1; i >= 0; i--) {
     let p = pipes[i];
@@ -78,7 +78,8 @@ function runGame() {
   // [수정 사항 반영]: 정확히 60초(1분) 경과 후부터 공 습격 개시!
   if (score >= 60.0) {
     let ballSpawnRate = max(55, 95 - floor((score - 60) * 0.2));
-    if (frameCount % floor(ballSpawnRate) === 0) {
+    let ballRateFloor = floor(ballSpawnRate);
+    if (ballRateFloor > 0 && frameCount % ballRateFloor === 0) {
       balls.push(new Ball(currentSpeed));
     }
   }

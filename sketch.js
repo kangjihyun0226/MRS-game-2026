@@ -43,7 +43,7 @@ let currentSpeed = 6;
 let spawnInterval = 80;
 let playerX, playerY;
 
-const PLAYER_HITBOX_RADIUS = 42;
+const PLAYER_HITBOX_RADIUS = 32;
 const PLAYER_VISUAL_SIZE = 100;
 const PREVIEW_HOLE_SIZE_RATIO = 0.62;
 
@@ -279,12 +279,15 @@ function drawBackground() {
 
 function draw() {
   drawBackground();
-  push();
-  translate(width, 0);
-  scale(-1, 1);
-  tint(255, 50);
-  image(video, 0, 0, width, height);
-  pop();
+  // 웹캠 렌더링은 대기실과 게임오버 화면에서만 수행하여 플레이 중 렉을 감소시킵니다.
+  if (gameState === "HOME" || gameState === "GAMEOVER") {
+    push();
+    translate(width, 0);
+    scale(-1, 1);
+    tint(255, 50);
+    image(video, 0, 0, width, height);
+    pop();
+  }
 
   if (gameState === "COUNT") drawCountdown();
   else if (gameState === "PLAY") runGame();
@@ -320,12 +323,7 @@ function drawCharacter() {
   }
 }
 
-function clearRanking() {
-  if (confirm("진짜로 모든 랭킹 기록을 싹 다 지우실 건가요? 🧙‍♂️")) {
-    localStorage.removeItem("doodle_rank");
-    showRanking();
-  }
-}
+// (제거됨) 로컬 랭킹 초기화 함수는 보안상 및 데이터 보존을 위해 삭제되었습니다.
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
